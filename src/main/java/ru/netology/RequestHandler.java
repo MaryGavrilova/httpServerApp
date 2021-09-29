@@ -1,9 +1,6 @@
 package ru.netology;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,8 +10,10 @@ import static ru.netology.Server.VALID_PATHS;
 
 public class RequestHandler implements Runnable {
     public static final int NUMBER_OF_REQUEST_LINE_PARTS = 3;
+    public static final int METHOD_POSITION_IN_REQUEST_LINE = 1;
+    public static final int PATH_POSITION_IN_REQUEST_LINE = 2;
+    public static final int PROTOCOL_POSITION_IN_REQUEST_LINE = 3;
     protected Socket socket;
-
     public RequestHandler(Socket socket) {
         this.socket = socket;
     }
@@ -30,7 +29,11 @@ public class RequestHandler implements Runnable {
                     socket.close();
                     break;
                 }
-                final String path = parts[1];
+
+                Request request = new Request(parts[METHOD_POSITION_IN_REQUEST_LINE - 1],
+                        parts[PATH_POSITION_IN_REQUEST_LINE - 1], parts[PROTOCOL_POSITION_IN_REQUEST_LINE - 1]);
+
+                final String path = request.getPath();
                 if (!VALID_PATHS.contains(path)) {
                     out.write((
                             "HTTP/1.1 404 Not Found\r\n" +
@@ -42,6 +45,7 @@ public class RequestHandler implements Runnable {
                     socket.close();
                     break;
                 }
+
                 final Path filePath = Path.of(".", "public", path);
                 final String mimeType = Files.probeContentType(filePath);
 
